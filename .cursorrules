@@ -1,0 +1,31 @@
+# .cursorrules — Module 10: On-Chain DAO Governance & Timelock
+
+## MODULE OVERVIEW
+Focus on building a fully decentralized, production-grade DAO governance system including checkpointed ERC-20 voting power with delegation, proposal lifecycle management, and a delay-enforced Timelock controller for arbitrary target execution using Foundry and Solidity 0.8.24.
+
+---
+
+## 1. TECHNICAL CONSTRAINTS & STACK
+
+- **Compiler Version:** Strictly `pragma solidity 0.8.24;` (no floating pragmas).
+- **Tooling:** Foundry (`forge` for unit testing, time-travel manipulation via `vm.warp` and `vm.roll`, and fuzzing).
+- **Voting Power Mechanism:** ERC-20 votes with historical snapshot tracking via checkpoints (`ERC20Votes`) to prevent double-voting during proposal execution.
+- **Proposal Lifecycle:** States must follow standard progression (`Pending` -> `Active` -> `Defeated`/`Succeeded` -> `Queued` -> `Executed`/`Expired`).
+
+---
+
+## 2. CODING & SECURITY RULES
+
+- **Timelock Controller Integration:** Force all successful proposals to pass through a minimum delay buffer (`MIN_DELAY`) before execution to allow users to exit if a malicious proposal passes.
+- **Proposal Threshold Checks:** Enforce `proposalThreshold` before allowing a user to create a proposal, preventing proposal spam.
+- **Custom Errors:** Strictly use custom errors (`error ProposalNotFound()`, `error VotingClosed()`, `error MinDelayNotMet()`, `error ProposalNotSucceeded()`, `error ExecutionFailed()`).
+- **Arbitrary Execution Guard:** Execute queued actions via low-level `.call` in the Timelock contract, verifying success boolean and handling reverting bytes explicitly.
+
+---
+
+## 3. TESTING REQUIREMENTS
+
+- **Foundry Unit Tests:** Validate full governance lifecycle (Delegate -> Propose -> Vote -> Queue -> Warp Time -> Execute).
+- **Flash Loan / Double Voting Prevention Tests:** Test that buying/transferring tokens *after* proposal creation does NOT grant voting weight for that active proposal.
+- **Execution Delays & Reverts:** Assert that executing proposals prior to the Timelock delay expiration fails.
+- **Fuzzing Tests:** Fuzz voting thresholds, quorum requirements, and execution delay intervals using `bound()`.
