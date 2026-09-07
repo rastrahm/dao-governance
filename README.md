@@ -2,9 +2,9 @@
 
 Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de propuestas y Timelock con `MIN_DELAY`. Solidity `0.8.24` + Foundry.
 
-**Estado:** Fases **0–5** ✅ (módulo completo: contratos + fuzz/SWC + deploy).
+**Estado:** Fases **0–6** ✅ (contratos + SWC + deploy + frontend).
 
-> **Frontend:** no incluido en v1. Si se agrega, carpeta `frontend/` + reglas Next.js del curso.
+> **Frontend:** `frontend/` — tema claro/oscuro + perfiles DAO (demo local).
 
 ---
 
@@ -42,6 +42,19 @@ forge script script/Deploy.s.sol:Deploy --rpc-url http://127.0.0.1:8545 --broadc
 ```
 
 Tras el deploy: `delegate` → `propose` → `castVote` → `queue` → esperar `MIN_DELAY` → `execute` (target `Box`).
+
+---
+
+## Frontend
+
+```shell
+cd frontend
+npm install
+npm run dev      # http://localhost:3000
+npm test
+```
+
+Tema claro/oscuro + perfiles **Observador / Holder / Proponente / Operador** (demo en memoria). Detalle: [`frontend/README.md`](./frontend/README.md).
 
 ---
 
@@ -102,3 +115,4 @@ lib/       # forge-std + OpenZeppelin (gitignored)
 | 3 | MyGovernor + lifecycle | ✅ |
 | 4 | Fuzz & hardening | ✅ |
 | 5 | Scripts / demo deploy | ✅ |
+| 6 | Frontend Next.js (tema + perfiles) | ✅ |
