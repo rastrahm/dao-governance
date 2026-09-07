@@ -152,12 +152,14 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 
 ## 9. Seguridad (checklist)
 
-- [ ] CEI en funciones con llamadas externas.
-- [ ] Timelock obligatorio para toda ejecución exitosa.
-- [ ] Snapshots/checkpoints en bloque de snapshot de la propuesta.
-- [ ] Custom errors en todos los reverts de dominio.
-- [ ] Roles Timelock: solo Governor propone; admin renunciado o 2-step.
-- [ ] Sin floating pragma; sin `transfer`/`send` de ETH.
+- [x] CEI en funciones con llamadas externas.
+- [x] Timelock obligatorio para toda ejecución exitosa.
+- [x] Snapshots/checkpoints en bloque de snapshot de la propuesta.
+- [x] Custom errors en todos los reverts de dominio.
+- [x] Roles Timelock: solo Governor propone; admin renunciado o 2-step.
+- [x] Sin floating pragma; sin `transfer`/`send` de ETH.
+- [x] Auditoría SWC (`doc/SWC-AUDIT.md`) alineada a módulo 08.
+- [x] Fuzz threshold / quorum / delay + suite `test/attack/`.
 
 ---
 
@@ -166,6 +168,7 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 | Archivo | Contenido |
 |---------|-----------|
 | `planificacion.md` | Este documento |
+| `SWC-AUDIT.md` | Matriz SWC-100–136 + riesgos informativos |
 | `diagrama-de-clases.md` | Estructura y relaciones entre contratos |
 | `diagrama-de-flujo.md` | Máquina de estados de la propuesta |
 | `flujograma.md` | Flujo actor-sistema extremo a extremo |
