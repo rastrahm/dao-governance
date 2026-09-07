@@ -29,7 +29,8 @@ describe("schemas", () => {
     expect(themeModeSchema.parse("light")).toBe("light");
   });
 
-  it("valida delegate self", () => {
+  it("valida delegate yo/self", () => {
+    expect(delegateFormSchema.parse({ delegatee: "yo" }).delegatee).toBe("yo");
     expect(delegateFormSchema.parse({ delegatee: "self" }).delegatee).toBe("self");
   });
 

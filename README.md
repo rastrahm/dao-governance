@@ -54,7 +54,8 @@ npm run dev      # http://localhost:3000
 npm test
 ```
 
-Tema claro/oscuro + perfiles **Observador / Holder / Proponente / Operador** (demo en memoria). Detalle: [`frontend/README.md`](./frontend/README.md).
+**Live:** MetaMask → Anvil (chain 31337) + `.env.local` con direcciones del Deploy.  
+Tema claro/oscuro + perfiles UI. Guía: [`frontend/README.md`](./frontend/README.md).
 
 ---
 

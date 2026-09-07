@@ -8,7 +8,7 @@ type ProfileSwitcherProps = {
 };
 
 /**
- * @description Selector de perfiles DAO (Observador / Holder / Proponente / Operador).
+ * @description Selector de perfiles DAO (Observador / Titular / Proponente / Operador).
  * @param profileId Perfil activo.
  * @param onChange Callback al cambiar perfil.
  * @returns Grupo de botones de perfil.
