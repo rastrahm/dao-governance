@@ -2,7 +2,7 @@
 
 Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de propuestas y Timelock con `MIN_DELAY`. Solidity `0.8.24` + Foundry.
 
-**Estado:** Fases **0–3** ✅ (setup + token + Timelock + Governor).
+**Estado:** Fases **0–4** ✅ (setup + token + Timelock + Governor + fuzz/SWC).
 
 ---
 
@@ -22,6 +22,7 @@ Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de pr
 | Doc | Descripción |
 |-----|-------------|
 | [doc/planificacion.md](./doc/planificacion.md) | Plan, fases TDD y criterios |
+| [doc/SWC-AUDIT.md](./doc/SWC-AUDIT.md) | Auditoría SWC-100–136 |
 | [doc/diagrama-de-clases.md](./doc/diagrama-de-clases.md) | UML de contratos |
 | [doc/diagrama-de-flujo.md](./doc/diagrama-de-flujo.md) | Máquina de estados de propuestas |
 | [doc/flujograma.md](./doc/flujograma.md) | Flujo extremo a extremo |
@@ -53,6 +54,12 @@ forge test --match-contract TimelockControllerTest
 
 forge test --match-contract MyGovernorTest
 # 9 PASS (lifecycle, flash-loan snapshot, ProposalNotFound/VotingClosed/ProposalNotSucceeded)
+
+forge test --match-path 'test/fuzz/*'
+# 5 PASS × 1000 runs (threshold, quorum, delay, post-snapshot)
+
+forge test --match-path 'test/attack/*'
+# 3 PASS (reentrancy + unauthorized)
 ```
 
 ---
@@ -77,5 +84,5 @@ lib/       # forge-std + OpenZeppelin (gitignored)
 | 1 | GovernanceToken (ERC20Votes) | ✅ |
 | 2 | TimelockController | ✅ |
 | 3 | MyGovernor + lifecycle | ✅ |
-| 4 | Fuzz & hardening | ⏳ |
+| 4 | Fuzz & hardening | ✅ |
 | 5 | Scripts / demo | ⏳ |

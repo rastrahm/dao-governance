@@ -100,6 +100,58 @@ contract MyGovernor is Governor, GovernorSettings, GovernorCountingSimple, Gover
 
     /**
      * @inheritdoc Governor
+     */
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason)
+        public
+        override
+        returns (uint256)
+    {
+        _requireActiveProposal(proposalId);
+        return super.castVoteWithReason(proposalId, support, reason);
+    }
+
+    /**
+     * @inheritdoc Governor
+     */
+    function castVoteWithReasonAndParams(
+        uint256 proposalId,
+        uint8 support,
+        string calldata reason,
+        bytes memory params
+    ) public override returns (uint256) {
+        _requireActiveProposal(proposalId);
+        return super.castVoteWithReasonAndParams(proposalId, support, reason, params);
+    }
+
+    /**
+     * @inheritdoc Governor
+     */
+    function castVoteBySig(uint256 proposalId, uint8 support, address voter, bytes memory signature)
+        public
+        override
+        returns (uint256)
+    {
+        _requireActiveProposal(proposalId);
+        return super.castVoteBySig(proposalId, support, voter, signature);
+    }
+
+    /**
+     * @inheritdoc Governor
+     */
+    function castVoteWithReasonAndParamsBySig(
+        uint256 proposalId,
+        uint8 support,
+        address voter,
+        string calldata reason,
+        bytes memory params,
+        bytes memory signature
+    ) public override returns (uint256) {
+        _requireActiveProposal(proposalId);
+        return super.castVoteWithReasonAndParamsBySig(proposalId, support, voter, reason, params, signature);
+    }
+
+    /**
+     * @inheritdoc Governor
      * @dev Solo desde `Succeeded`; si no, `ProposalNotSucceeded` / `ProposalNotFound`.
      */
     function queue(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
