@@ -13,12 +13,13 @@ Construir un sistema de gobernanza DAO on-chain de nivel producción con:
 
 ## 2. Alcance
 
-| Incluido | Excluido (por ahora) |
-|----------|----------------------|
-| Token de gobernanza con votos y delegación | UI Next.js (si se agrega, seguir `nextjs.cursorrules`) |
+| Incluido | Excluido (v1) |
+|----------|----------------|
+| Token de gobernanza con votos y delegación | **UI / frontend Next.js** (opcional v2; seguir `nextjs.cursorrules`) |
 | Governor: propose → vote → queue → execute | Multichain / bridge |
 | Timelock: delay + ejecución vía `.call` | Upgradeability (proxy) salvo que se planifique después |
-| Tests unitarios, anti flash-loan, fuzz | Indexer / subgraph |
+| Tests unitarios, anti flash-loan, fuzz, SWC | Indexer / subgraph |
+| Script Foundry de deploy local | — |
 
 ---
 
@@ -130,10 +131,12 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 2. Cobertura de ramas de fallo con `vm.expectRevert`.
 3. Revisar CEI, access control, NatSpec.
 
-### Fase 5 — Scripts / demo (opcional)
+### Fase 5 — Scripts / demo ✅
 
-1. Script de deploy local/anvil.
+1. Script de deploy local/anvil (`script/Deploy.s.sol`).
 2. Target `Box` gobernado por Timelock.
+3. Wiring: Governor = PROPOSER/CANCELLER; executor abierto; renuncia `DEFAULT_ADMIN_ROLE` del deployer.
+4. Frontend **no** incluido en esta fase (fuera de alcance v1).
 
 ---
 

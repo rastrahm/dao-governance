@@ -2,7 +2,9 @@
 
 Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de propuestas y Timelock con `MIN_DELAY`. Solidity `0.8.24` + Foundry.
 
-**Estado:** Fases **0–4** ✅ (setup + token + Timelock + Governor + fuzz/SWC).
+**Estado:** Fases **0–5** ✅ (módulo completo: contratos + fuzz/SWC + deploy).
+
+> **Frontend:** no incluido en v1. Si se agrega, carpeta `frontend/` + reglas Next.js del curso.
 
 ---
 
@@ -26,6 +28,20 @@ Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de pr
 | [doc/diagrama-de-clases.md](./doc/diagrama-de-clases.md) | UML de contratos |
 | [doc/diagrama-de-flujo.md](./doc/diagrama-de-flujo.md) | Máquina de estados de propuestas |
 | [doc/flujograma.md](./doc/flujograma.md) | Flujo extremo a extremo |
+
+---
+
+## Deploy (Anvil)
+
+```shell
+export PATH="$HOME/.foundry/bin:$PATH"
+anvil   # otra terminal
+
+forge script script/Deploy.s.sol:Deploy --rpc-url http://127.0.0.1:8545 --broadcast
+# Opcional: MIN_DELAY=3600 MINT_AMOUNT=1000000000000000000000
+```
+
+Tras el deploy: `delegate` → `propose` → `castVote` → `queue` → esperar `MIN_DELAY` → `execute` (target `Box`).
 
 ---
 
@@ -85,4 +101,4 @@ lib/       # forge-std + OpenZeppelin (gitignored)
 | 2 | TimelockController | ✅ |
 | 3 | MyGovernor + lifecycle | ✅ |
 | 4 | Fuzz & hardening | ✅ |
-| 5 | Scripts / demo | ⏳ |
+| 5 | Scripts / demo deploy | ✅ |
