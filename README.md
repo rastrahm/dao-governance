@@ -2,7 +2,7 @@
 
 Gobernanza DAO on-chain con ERC-20Votes (checkpoints + delegación), ciclo de propuestas y Timelock con `MIN_DELAY`. Solidity `0.8.24` + Foundry.
 
-**Estado:** Fase **0** ✅ (setup Foundry).
+**Estado:** Fases **0–1** ✅ (setup + GovernanceToken).
 
 ---
 
@@ -42,6 +42,15 @@ forge test
 
 ---
 
+## Tests
+
+```shell
+forge test --match-contract GovernanceTokenTest
+# 15 PASS (mint, transfer, delegate, checkpoints, fuzz)
+```
+
+---
+
 ## Estructura
 
 ```text
@@ -59,7 +68,7 @@ lib/       # forge-std + OpenZeppelin (gitignored)
 | Fase | Descripción | Estado |
 |------|-------------|--------|
 | 0 | Setup Foundry + OZ v5 | ✅ |
-| 1 | GovernanceToken (ERC20Votes) | ⏳ |
+| 1 | GovernanceToken (ERC20Votes) | ✅ |
 | 2 | TimelockController | ⏳ |
 | 3 | MyGovernor + lifecycle | ⏳ |
 | 4 | Fuzz & hardening | ⏳ |
