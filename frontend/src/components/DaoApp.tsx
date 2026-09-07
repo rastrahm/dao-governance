@@ -1,31 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppToolbar } from "@/components/AppToolbar";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
-import { useDaoDemo } from "@/hooks/useDaoDemo";
+import { WalletBar } from "@/components/WalletBar";
+import { ProposalState, useDaoLive } from "@/hooks/useDaoLive";
 import { useProfile } from "@/hooks/useProfile";
-import { delegateFormSchema, proposeFormSchema, voteFormSchema } from "@/lib/schemas";
+import { useWallet } from "@/hooks/useWallet";
+import { getFrontendEnv } from "@/lib/env";
+import { delegateFormSchema, proposeFormSchema } from "@/lib/schemas";
 
 /**
- * @description Shell principal de la DAO: perfiles, tema (vía toolbar) y flujos demo.
- * @returns UI de gobernanza con paneles condicionados por perfil.
+ * @description Shell DAO live: wallet Anvil + perfiles + ciclo on-chain.
+ * @returns UI completa de gobernanza.
  */
 export function DaoApp() {
+  const env = useMemo(() => getFrontendEnv(), []);
+  const wallet = useWallet(env);
+  const live = useDaoLive(env, wallet.signer, wallet.address);
   const { profile, profileId, setProfileId } = useProfile();
-  const demo = useDaoDemo();
-  const [error, setError] = useState<string | null>(null);
 
-  const [delegateInput, setDelegateInput] = useState("self");
+  const [error, setError] = useState<string | null>(null);
+  const [delegateInput, setDelegateInput] = useState("yo");
   const [description, setDescription] = useState("Actualizar Box a 42");
   const [boxValue, setBoxValue] = useState("42");
-  const [voteId, setVoteId] = useState("");
   const [support, setSupport] = useState<"0" | "1" | "2">("1");
 
+  const connected = Boolean(wallet.address && !wallet.wrongChain);
+  const statusMsg = wallet.error ?? error ?? live.snap.message;
+
   /**
-   * @description Maneja el submit de delegación (demo).
+   * @description Delegación on-chain.
    */
-  function onDelegate(e: React.FormEvent) {
+  async function onDelegate(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const parsed = delegateFormSchema.safeParse({ delegatee: delegateInput });
@@ -33,13 +40,13 @@ export function DaoApp() {
       setError(parsed.error.issues[0]?.message ?? "Formulario inválido");
       return;
     }
-    demo.delegateSelf();
+    await live.delegate(parsed.data.delegatee);
   }
 
   /**
-   * @description Maneja el submit de propuesta (demo).
+   * @description Crea propuesta on-chain (Box.store).
    */
-  function onPropose(e: React.FormEvent) {
+  async function onPropose(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const parsed = proposeFormSchema.safeParse({ description, boxValue });
@@ -47,23 +54,20 @@ export function DaoApp() {
       setError(parsed.error.issues[0]?.message ?? "Formulario inválido");
       return;
     }
-    demo.propose(parsed.data.description, parsed.data.boxValue);
-    setVoteId("");
+    await live.propose(parsed.data.description, parsed.data.boxValue);
   }
 
   /**
-   * @description Maneja el submit de voto (demo).
+   * @description Emite voto on-chain.
    */
-  function onVote(e: React.FormEvent) {
+  async function onVote(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const id = voteId || demo.activeProposal?.id || "";
-    const parsed = voteFormSchema.safeParse({ proposalId: id, support });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Formulario inválido");
+    if (!live.proposal) {
+      setError("No hay propuesta cargada. Creá una primero.");
       return;
     }
-    demo.vote(parsed.data.proposalId, parsed.data.support);
+    await live.vote(Number(support));
   }
 
   return (
@@ -71,84 +75,145 @@ export function DaoApp() {
       <AppToolbar />
 
       <header className="hero">
-        <p className="eyebrow">Módulo 10</p>
+        <p className="eyebrow">Módulo 10 · Anvil</p>
         <h1 className="brand">DAO Governance</h1>
         <p className="lede">
-          Delegá, proponé, votá y ejecutá tras el Timelock. Cambiá de perfil para ver qué puede hacer cada rol.
+          Conectá MetaMask a Anvil (cuenta #0 del deploy), elegí un perfil y ejecutá el ciclo real on-chain.
         </p>
+        <div className="cta-row">
+          <WalletBar
+            address={wallet.address}
+            chainId={wallet.chainId}
+            connecting={wallet.connecting}
+            wrongChain={wallet.wrongChain}
+            expectedChainId={env?.NEXT_PUBLIC_CHAIN_ID ?? 31337}
+            onConnect={() => void wallet.connect()}
+            onDisconnect={wallet.disconnect}
+          />
+        </div>
       </header>
+
+      {!env ? (
+        <section className="panel error-box" role="alert">
+          Falta configuración. Creá <code>frontend/.env.local</code> con las direcciones del{" "}
+          <code>forge script Deploy</code>.
+        </section>
+      ) : null}
 
       <section className="panel" aria-labelledby="profiles-title">
         <h2 id="profiles-title" className="panel-title">
-          Perfil
+          Perfil de UI
         </h2>
         <ProfileSwitcher profileId={profileId} onChange={setProfileId} />
         <p className="muted tiny" data-testid="profile-summary">
-          {profile.summary}
+          {profile.summary} El poder real lo define tu wallet on-chain.
         </p>
       </section>
 
       <section className="panel" aria-labelledby="status-title">
         <h2 id="status-title" className="panel-title">
-          Estado demo
+          Estado on-chain
         </h2>
         <dl className="stats">
           <div>
-            <dt>Delegado</dt>
-            <dd data-testid="stat-delegated">{demo.state.delegated ? "Sí" : "No"}</dd>
+            <dt>Balance</dt>
+            <dd data-testid="stat-balance">{live.snap.balance}</dd>
           </div>
           <div>
-            <dt>Poder</dt>
-            <dd data-testid="stat-power">{demo.state.votingPower}</dd>
+            <dt>Votos</dt>
+            <dd data-testid="stat-power">{live.snap.votes}</dd>
+          </div>
+          <div>
+            <dt>Delegado a</dt>
+            <dd data-testid="stat-delegated">
+              {live.snap.delegatedTo ? `${live.snap.delegatedTo.slice(0, 6)}…` : "—"}
+            </dd>
           </div>
           <div>
             <dt>Box</dt>
-            <dd data-testid="stat-box">{demo.state.boxValue}</dd>
-          </div>
-          <div>
-            <dt>Propuestas</dt>
-            <dd data-testid="stat-proposals">{demo.state.proposals.length}</dd>
+            <dd data-testid="stat-box">{live.snap.boxValue}</dd>
           </div>
         </dl>
-        <p className="muted tiny" data-testid="last-message" role="status">
-          {demo.state.lastMessage}
+        <p className="muted tiny">
+          delay={live.snap.votingDelay} · period={live.snap.votingPeriod} · MIN_DELAY={live.snap.minDelay}s
         </p>
-        {demo.activeProposal ? (
+        {live.proposal ? (
           <p className="pill tiny" data-testid="active-proposal">
-            {demo.activeProposal.id} · {demo.activeProposal.state} · {demo.activeProposal.description}
+            {live.proposal.id.slice(0, 12)}… · {live.proposal.stateLabel} · {live.proposal.description}
           </p>
         ) : null}
+        <p className="muted tiny" data-testid="last-message" role="status">
+          {statusMsg}
+        </p>
+        <div className="actions" style={{ marginTop: "0.75rem" }}>
+          <button
+            type="button"
+            className="btn"
+            data-testid="refresh"
+            disabled={!connected || live.snap.busy}
+            onClick={() => void live.refresh()}
+          >
+            Refrescar
+          </button>
+          <button
+            type="button"
+            className="btn"
+            data-testid="mine-open"
+            disabled={!env || live.snap.busy}
+            onClick={() => void live.mineBlocks(Number(live.snap.votingDelay || 1) + 1)}
+          >
+            Minar (abrir voto)
+          </button>
+          <button
+            type="button"
+            className="btn"
+            data-testid="mine-close"
+            disabled={!env || live.snap.busy}
+            onClick={() => void live.mineBlocks(Number(live.snap.votingPeriod || 1) + 1)}
+          >
+            Minar (cerrar voto)
+          </button>
+          <button
+            type="button"
+            className="btn"
+            data-testid="warp-delay"
+            disabled={!env || live.snap.busy}
+            onClick={() => void live.warpSeconds(Number(live.snap.minDelay || env?.NEXT_PUBLIC_MIN_DELAY || 60))}
+          >
+            Adelantar MIN_DELAY
+          </button>
+        </div>
       </section>
 
-      {profile.canDelegate ? (
+      {connected && profile.canDelegate ? (
         <section className="panel" aria-labelledby="delegate-title">
           <h2 id="delegate-title" className="panel-title">
             Delegar
           </h2>
-          <form onSubmit={onDelegate}>
+          <form onSubmit={(e) => void onDelegate(e)}>
             <label className="field">
-              Delegatee
+              Destinatario
               <input
                 name="delegatee"
                 value={delegateInput}
                 onChange={(ev) => setDelegateInput(ev.target.value)}
-                placeholder="self o 0x…"
-                aria-label="Dirección delegatee"
+                placeholder="yo o 0x…"
+                aria-label="Dirección del destinatario"
               />
             </label>
-            <button type="submit" className="btn btn-primary" data-testid="delegate-submit">
-              Delegar
+            <button type="submit" className="btn btn-primary" data-testid="delegate-submit" disabled={live.snap.busy}>
+              Delegar en cadena
             </button>
           </form>
         </section>
       ) : null}
 
-      {profile.canPropose ? (
+      {connected && profile.canPropose ? (
         <section className="panel" aria-labelledby="propose-title">
           <h2 id="propose-title" className="panel-title">
             Proponer
           </h2>
-          <form onSubmit={onPropose}>
+          <form onSubmit={(e) => void onPropose(e)}>
             <label className="field">
               Descripción
               <input
@@ -169,29 +234,19 @@ export function DaoApp() {
                 aria-label="Valor a guardar en Box"
               />
             </label>
-            <button type="submit" className="btn btn-primary" data-testid="propose-submit">
+            <button type="submit" className="btn btn-primary" data-testid="propose-submit" disabled={live.snap.busy}>
               Crear propuesta
             </button>
           </form>
         </section>
       ) : null}
 
-      {profile.canVote ? (
+      {connected && profile.canVote ? (
         <section className="panel" aria-labelledby="vote-title">
           <h2 id="vote-title" className="panel-title">
             Votar
           </h2>
-          <form onSubmit={onVote}>
-            <label className="field">
-              Proposal ID
-              <input
-                name="proposalId"
-                value={voteId}
-                onChange={(ev) => setVoteId(ev.target.value)}
-                placeholder={demo.activeProposal?.id ?? "0x…"}
-                aria-label="ID de propuesta"
-              />
-            </label>
+          <form onSubmit={(e) => void onVote(e)}>
             <label className="field">
               Soporte
               <select
@@ -200,19 +255,25 @@ export function DaoApp() {
                 onChange={(ev) => setSupport(ev.target.value as "0" | "1" | "2")}
                 aria-label="Tipo de voto"
               >
-                <option value="1">For</option>
-                <option value="0">Against</option>
-                <option value="2">Abstain</option>
+                <option value="1">A favor</option>
+                <option value="0">En contra</option>
+                <option value="2">Abstención</option>
               </select>
             </label>
-            <button type="submit" className="btn btn-primary" data-testid="vote-submit">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              data-testid="vote-submit"
+              disabled={live.snap.busy || !live.proposal}
+            >
               Emitir voto
             </button>
           </form>
+          <p className="muted tiny">Si está Pendiente: usá «Minar (abrir voto)» antes de votar.</p>
         </section>
       ) : null}
 
-      {profile.canQueueExecute ? (
+      {connected && profile.canQueueExecute ? (
         <section className="panel" aria-labelledby="ops-title">
           <h2 id="ops-title" className="panel-title">
             Timelock
@@ -222,23 +283,30 @@ export function DaoApp() {
               type="button"
               className="btn btn-primary"
               data-testid="queue-submit"
-              disabled={!demo.activeProposal || demo.activeProposal.state !== "Succeeded"}
-              onClick={() => demo.activeProposal && demo.queue(demo.activeProposal.id)}
+              disabled={live.snap.busy || live.proposal?.state !== ProposalState.Succeeded}
+              onClick={() => void live.queue()}
             >
-              Queue
+              Encolar
             </button>
             <button
               type="button"
               className="btn"
               data-testid="execute-submit"
-              disabled={!demo.activeProposal || demo.activeProposal.state !== "Queued"}
-              onClick={() => demo.activeProposal && demo.execute(demo.activeProposal.id)}
+              disabled={live.snap.busy || live.proposal?.state !== ProposalState.Queued}
+              onClick={() => void live.execute()}
             >
-              Execute
+              Ejecutar
             </button>
           </div>
-          <p className="muted tiny">En demo el delay es instantáneo al pulsar Execute tras Queue.</p>
+          <p className="muted tiny">Tras Encolar, usá «Adelantar MIN_DELAY» y después Ejecutar.</p>
         </section>
+      ) : null}
+
+      {!connected && env ? (
+        <p className="muted" data-testid="connect-hint">
+          Conectá la wallet para ver las acciones del perfil. Importá en MetaMask la private key de Anvil #0
+          (<code>0xac09…ff80</code>) y red localhost:8545 / chainId 31337.
+        </p>
       ) : null}
 
       {error ? (

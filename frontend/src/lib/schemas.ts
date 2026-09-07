@@ -9,8 +9,11 @@ export const delegateFormSchema = z.object({
   delegatee: z
     .string()
     .trim()
-    .min(1, "Indicá una dirección o ‘self’")
-    .refine((v) => v === "self" || /^0x[a-fA-F0-9]{40}$/.test(v), "Dirección inválida o usá ‘self’"),
+    .min(1, "Indicá una dirección o ‘yo’")
+    .refine(
+      (v) => v === "yo" || v === "self" || /^0x[a-fA-F0-9]{40}$/.test(v),
+      "Dirección inválida o usá ‘yo’",
+    ),
 });
 
 export const proposeFormSchema = z.object({
@@ -20,7 +23,7 @@ export const proposeFormSchema = z.object({
 
 export const voteFormSchema = z.object({
   proposalId: z.string().trim().min(1, "Indicá el proposalId"),
-  support: z.enum(["0", "1", "2"], { message: "0 Against · 1 For · 2 Abstain" }),
+  support: z.enum(["0", "1", "2"], { message: "0 En contra · 1 A favor · 2 Abstención" }),
 });
 
 export type DelegateForm = z.infer<typeof delegateFormSchema>;

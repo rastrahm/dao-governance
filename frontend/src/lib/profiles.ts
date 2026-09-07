@@ -25,7 +25,7 @@ export const DAO_PROFILES: readonly DaoProfile[] = [
   },
   {
     id: "holder",
-    label: "Holder",
+    label: "Titular",
     summary: "Delegar poder de voto y consultar checkpoints.",
     canDelegate: true,
     canPropose: false,
