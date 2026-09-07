@@ -6,11 +6,11 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title TimelockController
- * @notice Encola operaciones y solo las ejecuta tras `MIN_DELAY` vía `.call`.
+ * @notice Encola operaciones (simple o batch) y solo las ejecuta tras `MIN_DELAY` vía `.call`.
  * @dev Roles: PROPOSER agenda, EXECUTOR ejecuta, CANCELLER cancela. Admin opcional en deploy.
  */
 contract TimelockController is AccessControl, ReentrancyGuard {
-    /// @notice Rol que puede `schedule` / `cancel`.
+    /// @notice Rol que puede `schedule` / `scheduleBatch`.
     bytes32 public constant PROPOSER_ROLE = keccak256("PROPOSER_ROLE");
     /// @notice Rol que puede `execute` (si se otorga a `address(0)`, queda abierto).
     bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
@@ -30,16 +30,18 @@ contract TimelockController is AccessControl, ReentrancyGuard {
     error OperationNotFound();
     error OperationAlreadyScheduled();
     error UnauthorizedExecutor();
+    error InvalidOperationLength();
 
     event CallScheduled(
         bytes32 indexed id,
-        address indexed target,
+        uint256 indexed index,
+        address target,
         uint256 value,
         bytes data,
         bytes32 predecessor,
         uint256 delay
     );
-    event CallExecuted(bytes32 indexed id, address indexed target, uint256 value, bytes data);
+    event CallExecuted(bytes32 indexed id, uint256 indexed index, address target, uint256 value, bytes data);
     event Cancelled(bytes32 indexed id);
 
     /**
@@ -134,13 +136,20 @@ contract TimelockController is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Encola una operación que será ejecutable tras `delay` (≥ `MIN_DELAY`).
-     * @param target Contrato destino del `.call`.
-     * @param value ETH a enviar.
-     * @param data Calldata.
-     * @param predecessor Id que debe estar done (0 = ninguno).
-     * @param salt Salt anti-colisión.
-     * @param delay Segundos de espera (≥ MIN_DELAY).
+     * @notice Hash determinista de un batch de operaciones.
+     */
+    function hashOperationBatch(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata payloads,
+        bytes32 predecessor,
+        bytes32 salt
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encode(targets, values, payloads, predecessor, salt));
+    }
+
+    /**
+     * @notice Encola una operación simple ejecutable tras `delay` (≥ `MIN_DELAY`).
      */
     function schedule(
         address target,
@@ -150,17 +159,33 @@ contract TimelockController is AccessControl, ReentrancyGuard {
         bytes32 salt,
         uint256 delay
     ) external onlyRole(PROPOSER_ROLE) {
-        if (delay < MIN_DELAY) {
-            revert MinDelayNotMet();
-        }
-
         bytes32 id = hashOperation(target, value, data, predecessor, salt);
-        if (_timestamps[id] != 0) {
-            revert OperationAlreadyScheduled();
+        _schedule(id, delay);
+        emit CallScheduled(id, 0, target, value, data, predecessor, delay);
+    }
+
+    /**
+     * @notice Encola un batch de llamadas bajo un único `id` / eta.
+     */
+    function scheduleBatch(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata payloads,
+        bytes32 predecessor,
+        bytes32 salt,
+        uint256 delay
+    ) external onlyRole(PROPOSER_ROLE) {
+        if (targets.length != values.length || targets.length != payloads.length) {
+            revert InvalidOperationLength();
         }
 
-        _timestamps[id] = block.timestamp + delay;
-        emit CallScheduled(id, target, value, data, predecessor, delay);
+        bytes32 id = hashOperationBatch(targets, values, payloads, predecessor, salt);
+        _schedule(id, delay);
+
+        uint256 length = targets.length;
+        for (uint256 i; i < length; ++i) {
+            emit CallScheduled(id, i, targets[i], values[i], payloads[i], predecessor, delay);
+        }
     }
 
     /**
@@ -176,8 +201,8 @@ contract TimelockController is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @notice Ejecuta una operación ready con low-level `.call`.
-     * @dev CEI: checks de estado → marcar done → interacción. ReentrancyGuard adicional.
+     * @notice Ejecuta una operación simple ready con low-level `.call`.
+     * @dev CEI: checks → marcar done → interacción. ReentrancyGuard adicional.
      */
     function execute(address target, uint256 value, bytes calldata data, bytes32 predecessor, bytes32 salt)
         external
@@ -185,8 +210,62 @@ contract TimelockController is AccessControl, ReentrancyGuard {
         nonReentrant
     {
         _checkExecutor();
-
         bytes32 id = hashOperation(target, value, data, predecessor, salt);
+        _beforeExecute(id, predecessor);
+
+        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        if (!success) {
+            _revertFromReturnData(returndata);
+        }
+
+        emit CallExecuted(id, 0, target, value, data);
+    }
+
+    /**
+     * @notice Ejecuta un batch ready; cada item vía `.call`.
+     */
+    function executeBatch(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata payloads,
+        bytes32 predecessor,
+        bytes32 salt
+    ) external payable nonReentrant {
+        if (targets.length != values.length || targets.length != payloads.length) {
+            revert InvalidOperationLength();
+        }
+
+        _checkExecutor();
+        bytes32 id = hashOperationBatch(targets, values, payloads, predecessor, salt);
+        _beforeExecute(id, predecessor);
+
+        uint256 length = targets.length;
+        for (uint256 i; i < length; ++i) {
+            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(payloads[i]);
+            if (!success) {
+                _revertFromReturnData(returndata);
+            }
+            emit CallExecuted(id, i, targets[i], values[i], payloads[i]);
+        }
+    }
+
+    /**
+     * @dev Registra eta si delay ≥ MIN_DELAY y el id está libre.
+     */
+    function _schedule(bytes32 id, uint256 delay) private {
+        if (delay < MIN_DELAY) {
+            revert MinDelayNotMet();
+        }
+        if (_timestamps[id] != 0) {
+            revert OperationAlreadyScheduled();
+        }
+        _timestamps[id] = block.timestamp + delay;
+    }
+
+    /**
+     * @dev Valida ready + predecessor y marca done (effects antes de calls).
+     */
+    function _beforeExecute(bytes32 id, bytes32 predecessor) private {
         uint256 timestamp = _timestamps[id];
 
         if (timestamp == 0 || timestamp == _DONE_TIMESTAMP) {
@@ -199,15 +278,7 @@ contract TimelockController is AccessControl, ReentrancyGuard {
             revert OperationNotFound();
         }
 
-        // Effects antes de la llamada externa (CEI).
         _timestamps[id] = _DONE_TIMESTAMP;
-
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
-        if (!success) {
-            _revertFromReturnData(returndata);
-        }
-
-        emit CallExecuted(id, target, value, data);
     }
 
     /**
