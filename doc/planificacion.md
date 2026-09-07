@@ -13,13 +13,10 @@ Construir un sistema de gobernanza DAO on-chain de nivel producción con:
 
 ## 2. Alcance
 
-| Incluido | Excluido (v1) |
-|----------|----------------|
-| Token de gobernanza con votos y delegación | **UI / frontend Next.js** (opcional v2; seguir `nextjs.cursorrules`) |
-| Governor: propose → vote → queue → execute | Multichain / bridge |
-| Timelock: delay + ejecución vía `.call` | Upgradeability (proxy) salvo que se planifique después |
-| Tests unitarios, anti flash-loan, fuzz, SWC | Indexer / subgraph |
-| Script Foundry de deploy local | — |
+| Incluido | Excluido (v1 contratos) / v2 UI |
+|----------|----------------------------------|
+| Token, Governor, Timelock, Box, tests, SWC, deploy | Multichain / bridge / proxy |
+| **Fase 6:** Frontend Next.js (tema + perfiles) | Indexer / subgraph |
 
 ---
 
@@ -131,12 +128,12 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 2. Cobertura de ramas de fallo con `vm.expectRevert`.
 3. Revisar CEI, access control, NatSpec.
 
-### Fase 5 — Scripts / demo ✅
+### Fase 6 — Frontend (Next.js) ✅ planificado
 
-1. Script de deploy local/anvil (`script/Deploy.s.sol`).
-2. Target `Box` gobernado por Timelock.
-3. Wiring: Governor = PROPOSER/CANCELLER; executor abierto; renuncia `DEFAULT_ADMIN_ROLE` del deployer.
-4. Frontend **no** incluido en esta fase (fuera de alcance v1).
+1. App Router + tema **claro / oscuro** (persistencia + boot sin flash).
+2. **Perfiles de uso:** Observador, Holder, Proponente, Operador (acciones según perfil).
+3. Flujos demo: delegar, proponer, votar, encolar/ejecutar; validación Zod.
+4. Vitest + Testing Library; tipado estricto; `error.tsx` / `not-found.tsx`.
 
 ---
 
@@ -175,6 +172,9 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 | `diagrama-de-clases.md` | Estructura y relaciones entre contratos |
 | `diagrama-de-flujo.md` | Máquina de estados de la propuesta |
 | `flujograma.md` | Flujo actor-sistema extremo a extremo |
+
+Frontend (Fase 6): ver `frontend/README.md`.
+
 
 ---
 
