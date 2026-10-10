@@ -1,5 +1,7 @@
 # Diagrama de flujo — Máquina de estados de la propuesta
 
+> 🌐 [English](./diagrama-de-flujo-EN.md) · **Español**
+
 Transiciones oficiales del ciclo de vida de una propuesta DAO (módulo 10).
 
 ## Diagrama (Mermaid)
