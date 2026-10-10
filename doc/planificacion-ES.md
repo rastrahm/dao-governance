@@ -1,5 +1,7 @@
 # Planificación — Módulo 10: On-Chain DAO Governance & Timelock
 
+> 🌐 [English](./planificacion-EN.md) · **Español**
+
 ## 1. Objetivo
 
 Construir un sistema de gobernanza DAO on-chain de nivel producción con:
@@ -158,7 +160,7 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 - [x] Custom errors en todos los reverts de dominio.
 - [x] Roles Timelock: solo Governor propone; admin renunciado o 2-step.
 - [x] Sin floating pragma; sin `transfer`/`send` de ETH.
-- [x] Auditoría SWC (`doc/SWC-AUDIT.md`) alineada a módulo 08.
+- [x] Auditoría SWC (`doc/SWC-AUDIT-ES.md`) alineada a módulo 08.
 - [x] Fuzz threshold / quorum / delay + suite `test/attack/`.
 
 ---
@@ -167,11 +169,14 @@ Orden obligatorio según reglas Foundry/Solidity: **tests primero**, luego contr
 
 | Archivo | Contenido |
 |---------|-----------|
-| `planificacion.md` | Este documento |
-| `SWC-AUDIT.md` | Matriz SWC-100–136 + riesgos informativos |
-| `diagrama-de-clases.md` | Estructura y relaciones entre contratos |
-| `diagrama-de-flujo.md` | Máquina de estados de la propuesta |
-| `flujograma.md` | Flujo actor-sistema extremo a extremo |
+| `planificacion-ES.md` | Este documento |
+| `SWC-AUDIT-ES.md` | Matriz SWC-100–136 + riesgos informativos |
+| `diagrama-de-clases-ES.md` | Estructura y relaciones entre contratos |
+| `diagrama-de-flujo-ES.md` | Máquina de estados de la propuesta |
+| `flujograma-ES.md` | Flujo actor-sistema extremo a extremo |
+| `decisiones-tecnicas-ES.md` | Decisiones técnicas, lógica y gas |
+
+Cada archivo tiene su versión en inglés con sufijo `-EN.md`.
 
 Frontend (Fase 6): ver `frontend/README.md`.
 

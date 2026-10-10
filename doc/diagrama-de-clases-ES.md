@@ -1,5 +1,7 @@
 # Diagrama de clases — DAO Governance & Timelock
 
+> 🌐 [English](./diagrama-de-clases-EN.md) · **Español**
+
 Vista estructural de contratos, herencia OpenZeppelin y relaciones de composición/uso.
 
 ## Diagrama (Mermaid)

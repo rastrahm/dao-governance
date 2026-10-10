@@ -1,5 +1,7 @@
 # Flujograma — Ciclo completo de gobernanza DAO
 
+> 🌐 [English](./flujograma-EN.md) · **Español**
+
 Flujo extremo a extremo entre actores y contratos: desde la delegación hasta la ejecución en el target.
 
 ## Actores

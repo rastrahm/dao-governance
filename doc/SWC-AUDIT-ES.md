@@ -1,5 +1,7 @@
 # Auditoría SWC — On-Chain DAO Governance & Timelock
 
+> 🌐 [English](./SWC-AUDIT-EN.md) · **Español**
+
 Verificación de `GovernanceToken`, `MyGovernor`, `TimelockController` y `Box` contra el [SWC Registry](https://swcregistry.io/) (EIP-1470) y principios del monorepo (custom errors, CEI, `ReentrancyGuard`, AccessControl, ERC20Votes checkpoints).
 
 > **Nota:** El SWC Registry no se mantiene activamente desde ~2020. Complementar con [SCSVS](https://github.com/ComposableSecurity/SCSVS) y [EEA EthTrust](https://entethalliance.org/specs/ethtrust/).
@@ -187,4 +189,4 @@ Total: 46 PASS / 0 FAIL / 0 SKIP
 - [SWC Registry](https://swcregistry.io/)
 - [EIP-1470](https://eips.ethereum.org/EIPS/eip-1470)
 - Módulo 08: [`08-flash-loans/doc/SWC-AUDIT.md`](../../08-flash-loans/doc/SWC-AUDIT.md)
-- Plan: [`planificacion.md`](./planificacion.md)
+- Plan: [`planificacion-ES.md`](./planificacion-ES.md)
